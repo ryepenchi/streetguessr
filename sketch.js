@@ -2,8 +2,9 @@ var data;
 var name;
 var mymap;
 var marker;
-var guess;
+var guessLatLng;
 var street;
+var drawnStreet;
 var wien = new L.LatLng(48.2110, 16.3725);
 
 function preload() {
@@ -36,7 +37,8 @@ function setup() {
     mymap.setMaxBounds(mymap.getBounds());
     mymap.setZoom(13);
     // mymap.overlay(canvas)
-    drawMarker();
+    var center = mymap.getCenter();
+    marker = new L.marker(center).addTo(mymap);
     
 	// control that shows state info on hover
 	var info = L.control({position: "topleft"});
@@ -79,8 +81,9 @@ function setup() {
             click: function(data)
             {
                 console.log('ok clicked');
-                mymap.setZoom(16);
                 mymap.addLayer(labellayer);
+                drawStreet(street);
+                mymap.fitBounds(drawnStreet.getBounds());
             },
         }})
         .addTo(mymap);
@@ -110,15 +113,15 @@ function setup() {
                     street = getRandomStreet();
                     info.update();
                     mymap.removeLayer(labellayer);
+                    drawnStreet.remove();
                     console.log(street)
                 },
             }})
             .addTo(mymap);
 }
 function drawStreet(name) {
-    var street = data.filter(function(feature) {feature.properties.FEATURENAME == name});
-    var line = new L.geoJSON(street);
-    line.addTo(mymap);
+    drawnStreet = L.geoJSON(data, {filter: function(feature) {return feature.properties.FEATURENAME == name}}).addTo(mymap);
+    drawnStreet.addData(marker.toGeoJSON());
 }
 
 function getRandomStreet() {
@@ -130,16 +133,14 @@ function getRandomStreet() {
     }
 }
 function drawMarker() {
-    var center = mymap.getCenter();
-    marker = new L.marker(center).addTo(mymap);
+    center = mymap.getCenter();
+    marker.setLatLng(center);
 }
 
 function guess() {
-    var guess = marker.getLatLng();
+    guessLatLng = marker.getLatLng();
 }
 
 function draw() {
-    marker.remove();
     drawMarker();
-
 }
