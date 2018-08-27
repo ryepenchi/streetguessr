@@ -7,9 +7,9 @@ var street;
 var wien = new L.LatLng(48.2110, 16.3725);
 
 function preload() {
-    var url = "https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json"
-    data = loadJSON(url)
-    // data = loadJSON("streets.json")
+    // var url = "https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json"
+    // data = loadJSON(url)
+    data = loadJSON("streets.json")
 }
 
 function setup() {
