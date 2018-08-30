@@ -4,6 +4,7 @@ var mymap;
 var marker;
 var guessLatLng;
 var street;
+var errorline;
 var drawnStreet;
 var wien = new L.LatLng(48.2110, 16.3725);
 
@@ -80,10 +81,15 @@ function setup() {
         {
             click: function(data)
             {
+                var guess = marker._latlng;
                 console.log('ok clicked');
                 mymap.addLayer(labellayer);
                 drawStreet(street);
                 mymap.fitBounds(drawnStreet.getBounds());
+                var really = marker._latlng;
+                errorline = L.polyline([guess, really]).addTo(mymap);
+                var errordist = mymap.distance(guess, really);
+                console.log(errordist);
             },
         }})
         .addTo(mymap);
@@ -114,6 +120,7 @@ function setup() {
                     info.update();
                     mymap.removeLayer(labellayer);
                     drawnStreet.remove();
+                    errorline.remove();
                     console.log(street)
                 },
             }})
@@ -135,10 +142,6 @@ function getRandomStreet() {
 function drawMarker() {
     center = mymap.getCenter();
     marker.setLatLng(center);
-}
-
-function guess() {
-    guessLatLng = marker.getLatLng();
 }
 
 function draw() {
