@@ -1,29 +1,33 @@
 var data;
-var name;
+var tempdata;
+var bezirksgrenzen;
 var mymap;
 var marker;
-var guessLatLng;
+// var guessmarker;
+// var guessLatLng;
 var street;
-var errorline;
+// var errorline;
 var drawnStreet;
 var wien = new L.LatLng(48.2110, 16.3725);
+var defaultdistricts = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23];
 
 function preload() {
     // var url = "https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json"
     // data = loadJSON(url)
-    data = loadJSON("streets.json")
+    data = loadJSON("streets.json");
+    bezirksgrenzen = loadJSON("bezirke.json");
 }
 
 function setup() {
-    canvas = createCanvas(windowWidth, windowHeight);
-    background(100);
+    // canvas = createCanvas(windowWidth, windowHeight);
+    // background(100);
 
-    var layers = ["toner", "toner-lines", "terrain","terrain-lines", "watercolor"];
-    var layer = "toner-lines"
+    // possible layers = ["toner", "toner-lines", "terrain","terrain-lines", "watercolor"];
+    var layer = "toner-lines";
     mymap = new L.Map(layer, {
         center: wien,
-        zoom: 12,
-        minZoom: 12,
+        zoom: 11,
+        minZoom: 11,
         maxZoom: 16,
         zoomControl: false
     });
@@ -36,29 +40,21 @@ function setup() {
     });
 
     mymap.setMaxBounds(mymap.getBounds());
-    mymap.setZoom(13);
+    mymap.setZoom(12);
     // mymap.overlay(canvas)
     var center = mymap.getCenter();
     marker = new L.marker(center).addTo(mymap);
     
-	// control that shows state info on hover
 	var info = L.control({position: "topleft"});
-
-	info.onAdd = function (map) {
+	info.onAdd = function () {
         this._div = L.DomUtil.create('div', 'info');
         street = getRandomStreet();
 		this.update();
 		return this._div;
 	};
-    // As used in example
-	// info.update = function (props) {
-	// 	this._div.innerHTML = '<h4>US Population Density</h4>' +  (props ?
-	// 		'<b>' + props.name + '</b><br />' + props.density + ' people / mi<sup>2</sup>'
-	// 		: 'Hover over a state');
-    // };
     info.update = function () {
-        this._div.innerHTML = 'Find: </br>'+street
-    }
+        this._div.innerHTML = 'Find: </br>'+street;
+    };
     info.addTo(mymap);
 
     L.control.custom({
@@ -73,23 +69,20 @@ function setup() {
             padding: '0px 0 0 0',
             cursor: 'pointer'
         },
-        datas   :
-        {
-            'foo': 'bar',
-        },
         events:
         {
-            click: function(data)
+            click: function()
             {
-                var guess = marker._latlng;
+                var guess = marker.getLatLng();
+                // guessmarker = new L.marker(guess).addTo(mymap);
                 console.log('ok clicked');
                 mymap.addLayer(labellayer);
                 drawStreet(street);
-                mymap.fitBounds(drawnStreet.getBounds());
-                var really = marker._latlng;
-                errorline = L.polyline([guess, really]).addTo(mymap);
-                var errordist = mymap.distance(guess, really);
-                console.log(errordist);
+                // mymap.fitBounds(drawnStreet.getBounds());
+                // var really = marker._latlng;
+                // errorline = L.polyline([guess, really]).addTo(mymap);
+                // var errordist = mymap.distance(guess, really);
+                // console.log(errordist);
             },
         }})
         .addTo(mymap);
@@ -106,10 +99,6 @@ function setup() {
                 padding: '0px 0 0 0',
                 cursor: 'pointer'
             },
-            datas   :
-            {
-                'foo': 'bar',
-            },
             events:
             {
                 click: function(data)
@@ -120,30 +109,42 @@ function setup() {
                     info.update();
                     mymap.removeLayer(labellayer);
                     drawnStreet.remove();
-                    errorline.remove();
-                    console.log(street)
+                    // guessmarker.remove();
+                    // errorline.remove();
                 },
             }})
             .addTo(mymap);
+            var districtcontrol = new L.control.layers();
+            var i;
+            for (i = 1; i < 24; i++) {
+                bezirk = new L.geoJSON(bezirksgrenzen, {filter: function(feature) {return feature.properties.BEZNR == i;},
+                                                        style: {'color': "#707070"}});
+                districtcontrol.addOverlay(bezirk, i.toString());
+                if (defaultdistricts.includes(i)) {
+                    bezirk.addTo(mymap);
+                };
+            };
+            districtcontrol.addTo(mymap);
+
 }
+
 function drawStreet(name) {
-    drawnStreet = L.geoJSON(data, {filter: function(feature) {return feature.properties.FEATURENAME == name}}).addTo(mymap);
-    drawnStreet.addData(marker.toGeoJSON());
+    drawnStreet = L.geoJSON(data, {filter: function(feature) {return feature.properties.FEATURENAME == name;}, 
+                                    style: {'color': "#0033FF"}}).addTo(mymap);
+    // drawnStreet.addData(marker.toGeoJSON());
 }
 
 function getRandomStreet() {
-    var temp = data.features[floor(random(28484))].properties.FEATURENAME
+    tempdata = data.features.filter(function (feature) {return !defaultdistricts.includes(Number(feature.properties.BEZIRK.slice(3,5)))});
+    var temp = tempdata[floor(random(tempdata.length))].properties.FEATURENAME;
     if (temp != "Unbenannte Verkehrsfläche") {
-        return temp
+        console.log(temp)
+        return temp;
     } else {
-        return getRandomStreet()
+        return getRandomStreet();
     }
-}
-function drawMarker() {
-    center = mymap.getCenter();
-    marker.setLatLng(center);
 }
 
 function draw() {
-    drawMarker();
+    marker.setLatLng(mymap.getCenter());
 }
