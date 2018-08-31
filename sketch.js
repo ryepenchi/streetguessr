@@ -137,7 +137,7 @@ function drawStreet(name) {
 function getRandomStreet() {
     tempdata = data.features.filter(function (feature) {return !defaultdistricts.includes(Number(feature.properties.BEZIRK.slice(3,5)))});
     var temp = tempdata[floor(random(tempdata.length))].properties.FEATURENAME;
-    if (temp != "Unbenannte Verkehrsfläche") {
+    if (temp != "Unbenannte Verkehrsfläche" && temp != "B14") {
         console.log(temp)
         return temp;
     } else {
