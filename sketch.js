@@ -6,13 +6,13 @@ var mymap;
 var marker;
 var guess;
 var guessmarker = new L.marker();
-// var guessLatLng;
 var street;
 // var errorline;
 var drawnStreet;
 var wien = new L.LatLng(48.2110, 16.3725);
 var defaultdistricts = new Set([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23]);
 var restricteddistricts = new Set();
+var unrestricteddistricts = new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]);
 var districtcontrol;
 var districts = {};
 var state = false;
@@ -67,10 +67,12 @@ function setup() {
         districts[i].onAdd = function (map) {
             this.eachLayer(map.addLayer, map);
             restricteddistricts.add(Number(districts.getKeyByValue(this)));
+            unrestricteddistricts.delete(Number(districts.getKeyByValue(this)));
         };
         districts[i].onRemove = function (map) {
             this.eachLayer(map.removeLayer, map);
             restricteddistricts.delete(Number(districts.getKeyByValue(this)));
+            unrestricteddistricts.add(Number(districts.getKeyByValue(this)));
         };
         if (defaultdistricts.has(i)) {
             districts[i].addTo(mymap);
@@ -141,9 +143,9 @@ function setup() {
         {
             click: function(data) {
                 console.log('refresh clicked');
-                // playarea = L.featureGroup([activeDistricts()]);
-                // mymap.fitBounds(playarea);
-                mymap.setView(wien, 13);
+                playarea = new L.featureGroup(activeDistricts());
+                mymap.fitBounds(playarea.getBounds());
+                // mymap.setView(wien, 13);
                 street = getRandomStreet();
                 info.update();
                 mymap.removeLayer(labellayer);
@@ -160,18 +162,18 @@ function setup() {
 function drawStreet(name) {
     drawnStreet = L.geoJSON(data, {filter: function(feature) {return feature.properties.FEATURENAME == name;}, 
                                     style: {'color': "#0033FF"}}).addTo(mymap);
-    // drawnStreet.addData(marker.toGeoJSON());
 }
 
-// function activeDistricts () {
-//     var result = [];
-//     for (i = 1; i < 24; i++) {
-//         if (!restricteddistricts.has(i)) {
-//             result.push(districts[i]);
-//         }
-//     }
-//     return result;
-// }
+function activeDistricts () {
+    var result = [];
+    console.log(result);
+    for (i = 1; i < 24; i++) {
+        if (!restricteddistricts.has(i)) {
+            result.push(districts[i]);
+        }
+    }
+    return result;
+}
 
 function getRandomStreet() {
     tempdata = data.features.filter(function (feature) {return !restricteddistricts.has(Number(feature.properties.BEZIRK.slice(3,5)))});
