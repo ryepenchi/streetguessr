@@ -1,9 +1,11 @@
 var data;
 var tempdata;
 var bezirksgrenzen;
+var playarea;
 var mymap;
 var marker;
-// var guessmarker;
+var guess;
+var guessmarker = new L.marker();
 // var guessLatLng;
 var street;
 // var errorline;
@@ -13,6 +15,7 @@ var defaultdistricts = new Set([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 
 var restricteddistricts = new Set();
 var districtcontrol;
 var districts = {};
+var state = false;
 
 districts.getKeyByValue = function( value ) {
     for( var prop in this ) {
@@ -31,9 +34,7 @@ function preload() {
 }
 
 function setup() {
-    // canvas = createCanvas(windowWidth, windowHeight);
-    // background(100);
-
+    // MAP
     // possible layers = ["toner", "toner-lines", "terrain","terrain-lines", "watercolor"];
     var layer = "toner-lines";
     mymap = new L.Map(layer, {
@@ -53,10 +54,31 @@ function setup() {
 
     mymap.setMaxBounds(mymap.getBounds());
     mymap.setZoom(12);
-    // mymap.overlay(canvas)
-    var center = mymap.getCenter();
-    marker = new L.marker(center).addTo(mymap);
+
+    // Marker
+    marker = new L.marker(wien).addTo(mymap);
     
+    // District Control Button
+    districtcontrol = new L.control.layers();
+    var i;
+    for (i = 1; i < 24; i++) {
+        districts[i]= new L.geoJSON(bezirksgrenzen, {filter: function(feature) {return feature.properties.BEZNR == i;}, style: {'color': "#707070"}});
+        districtcontrol.addOverlay(districts[i], i.toString());
+        districts[i].onAdd = function (map) {
+            this.eachLayer(map.addLayer, map);
+            restricteddistricts.add(Number(districts.getKeyByValue(this)));
+        };
+        districts[i].onRemove = function (map) {
+            this.eachLayer(map.removeLayer, map);
+            restricteddistricts.delete(Number(districts.getKeyByValue(this)));
+        };
+        if (defaultdistricts.has(i)) {
+            districts[i].addTo(mymap);
+        };
+    };
+    districtcontrol.addTo(mymap);
+
+    // Info
 	var info = L.control({position: "topleft"});
 	info.onAdd = function () {
         this._div = L.DomUtil.create('div', 'info');
@@ -69,7 +91,8 @@ function setup() {
     };
     info.addTo(mymap);
 
-    L.control.custom({
+    // Submit Button
+    var submitb = L.control.custom({
         position: 'bottomright',
         content : '<button name="guess" type="button" class="btn btn-success btn-lg">'+
                 '<i class="glyphicon glyphicon-ok"></i>'+
@@ -85,69 +108,52 @@ function setup() {
         {
             click: function()
             {
-                var guess = marker.getLatLng();
-                // guessmarker = new L.marker(guess).addTo(mymap);
+                guess = marker.getLatLng();
+                guessmarker.setLatLng(guess).addTo(mymap);
+                guessmarker.bindPopup("Your Guess").openPopup();
                 console.log('ok clicked');
                 mymap.addLayer(labellayer);
                 drawStreet(street);
+                mymap.fitBounds(L.featureGroup([guessmarker, drawnStreet]).getBounds());
                 // mymap.fitBounds(drawnStreet.getBounds());
                 // var really = marker._latlng;
                 // errorline = L.polyline([guess, really]).addTo(mymap);
                 // var errordist = mymap.distance(guess, really);
                 // console.log(errordist);
             },
-        }})
-        .addTo(mymap);
+        }});
+        submitb.addTo(mymap);
 
-        L.control.custom({
-            position: 'bottomleft',
-            content : '<button name="new" type="button" class="btn btn-warning btn-lg">'+
-                    '<i class="glyphicon glyphicon-refresh"></i>'+
-                    '</button>',
-            classes : 'btn-group-horizontal btn-group-lg',
-            style   :
-            {
-                margin: '30px',
-                padding: '0px 0 0 0',
-                cursor: 'pointer'
+    // Reset Button
+    var resetb = L.control.custom({
+        position: 'bottomleft',
+        content : '<button name="new" type="button" class="btn btn-warning btn-lg">'+
+                '<i class="glyphicon glyphicon-refresh"></i>'+
+                '</button>',
+        classes : 'btn-group-horizontal btn-group-lg',
+        style   :
+        {
+            margin: '30px',
+            padding: '0px 0 0 0',
+            cursor: 'pointer'
+        },
+        events:
+        {
+            click: function(data) {
+                console.log('refresh clicked');
+                // playarea = L.featureGroup([activeDistricts()]);
+                // mymap.fitBounds(playarea);
+                mymap.setView(wien, 13);
+                street = getRandomStreet();
+                info.update();
+                mymap.removeLayer(labellayer);
+                drawnStreet.remove();
+                guessmarker.remove();
+                // errorline.remove();
             },
-            events:
-            {
-                click: function(data)
-                {
-                    console.log('refresh clicked');
-                    mymap.setView(wien, 13);
-                    street = getRandomStreet();
-                    info.update();
-                    mymap.removeLayer(labellayer);
-                    drawnStreet.remove();
-                    // guessmarker.remove();
-                    // errorline.remove();
-                },
-            }})
-            .addTo(mymap);
-            districtcontrol = new L.control.layers();
-            var i;
-            for (i = 1; i < 24; i++) {
-                console.log(i,1);
-                districts[i]= new L.geoJSON(bezirksgrenzen, {filter: function(feature) {return feature.properties.BEZNR == i;}, style: {'color': "#707070"}});
-                districtcontrol.addOverlay(districts[i], i.toString());
-                console.log(i,2)
-                districts[i].onAdd = function (map) {
-                    this.eachLayer(map.addLayer, map);
-                    console.log("bez added", districts.getKeyByValue(this));
-                    restricteddistricts.add(Number(districts.getKeyByValue(this)));
-                };
-                districts[i].onRemove = function (map) {
-                    this.eachLayer(map.removeLayer, map);
-                    console.log("bez removed", districts.getKeyByValue(this));
-                    restricteddistricts.delete(Number(districts.getKeyByValue(this)));
-                };
-                if (defaultdistricts.has(i)) {
-                    districts[i].addTo(mymap);
-                };
-            };
-            districtcontrol.addTo(mymap);
+        }
+        })
+        .addTo(mymap);
 
 }
 
@@ -156,6 +162,16 @@ function drawStreet(name) {
                                     style: {'color': "#0033FF"}}).addTo(mymap);
     // drawnStreet.addData(marker.toGeoJSON());
 }
+
+// function activeDistricts () {
+//     var result = [];
+//     for (i = 1; i < 24; i++) {
+//         if (!restricteddistricts.has(i)) {
+//             result.push(districts[i]);
+//         }
+//     }
+//     return result;
+// }
 
 function getRandomStreet() {
     tempdata = data.features.filter(function (feature) {return !restricteddistricts.has(Number(feature.properties.BEZIRK.slice(3,5)))});
