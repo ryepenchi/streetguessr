@@ -9,7 +9,19 @@ var street;
 // var errorline;
 var drawnStreet;
 var wien = new L.LatLng(48.2110, 16.3725);
-var defaultdistricts = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23];
+var defaultdistricts = new Set([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23]);
+var restricteddistricts = new Set();
+var districtcontrol;
+var districts = {};
+
+districts.getKeyByValue = function( value ) {
+    for( var prop in this ) {
+        if( this.hasOwnProperty( prop ) ) {
+             if( this[ prop ] === value )
+                 return prop;
+        }
+    }
+};
 
 function preload() {
     // var url = "https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json"
@@ -114,14 +126,25 @@ function setup() {
                 },
             }})
             .addTo(mymap);
-            var districtcontrol = new L.control.layers();
+            districtcontrol = new L.control.layers();
             var i;
             for (i = 1; i < 24; i++) {
-                bezirk = new L.geoJSON(bezirksgrenzen, {filter: function(feature) {return feature.properties.BEZNR == i;},
-                                                        style: {'color': "#707070"}});
-                districtcontrol.addOverlay(bezirk, i.toString());
-                if (defaultdistricts.includes(i)) {
-                    bezirk.addTo(mymap);
+                console.log(i,1);
+                districts[i]= new L.geoJSON(bezirksgrenzen, {filter: function(feature) {return feature.properties.BEZNR == i;}, style: {'color': "#707070"}});
+                districtcontrol.addOverlay(districts[i], i.toString());
+                console.log(i,2)
+                districts[i].onAdd = function (map) {
+                    this.eachLayer(map.addLayer, map);
+                    console.log("bez added", districts.getKeyByValue(this));
+                    restricteddistricts.add(Number(districts.getKeyByValue(this)));
+                };
+                districts[i].onRemove = function (map) {
+                    this.eachLayer(map.removeLayer, map);
+                    console.log("bez removed", districts.getKeyByValue(this));
+                    restricteddistricts.delete(Number(districts.getKeyByValue(this)));
+                };
+                if (defaultdistricts.has(i)) {
+                    districts[i].addTo(mymap);
                 };
             };
             districtcontrol.addTo(mymap);
@@ -135,9 +158,9 @@ function drawStreet(name) {
 }
 
 function getRandomStreet() {
-    tempdata = data.features.filter(function (feature) {return !defaultdistricts.includes(Number(feature.properties.BEZIRK.slice(3,5)))});
+    tempdata = data.features.filter(function (feature) {return !restricteddistricts.has(Number(feature.properties.BEZIRK.slice(3,5)))});
     var temp = tempdata[floor(random(tempdata.length))].properties.FEATURENAME;
-    if (temp != "Unbenannte Verkehrsfläche" && temp != "B14") {
+    if (temp != "Unbenannte Verkehrsfläche" && temp != "B14" && temp != "B227") {
         console.log(temp)
         return temp;
     } else {
