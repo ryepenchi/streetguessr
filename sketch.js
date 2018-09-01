@@ -1,3 +1,8 @@
+/* 
+ * StreetsOfVienna, a JS street guessing game
+ * (c) 2018 Benjamin Reimitz
+ */
+
 var data;
 var tempdata;
 var bezirksgrenzen;
@@ -31,6 +36,7 @@ districts.getKeyByValue = function( value ) {
 function preload() {
     // var url = "https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json"
     // data = loadJSON(url)
+    // Data: Stadt Wien – data.wien.gv.at
     data = loadJSON("streets.json");
     bezirksgrenzen = loadJSON("bezirke.json");
 }
