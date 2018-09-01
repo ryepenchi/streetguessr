@@ -7,7 +7,9 @@ var marker;
 var guess;
 var guessmarker = new L.marker();
 var street;
-// var errorline;
+var error;
+var nearestpoint;
+var errorline;
 var drawnStreet;
 var wien = new L.LatLng(48.2110, 16.3725);
 var defaultdistricts = new Set([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23]);
@@ -42,7 +44,8 @@ function setup() {
         zoom: 11,
         minZoom: 11,
         maxZoom: 16,
-        zoomControl: false
+        zoomControl: false,
+        zoomDelta: 0.5
     });
     var linelayer = new L.StamenTileLayer(layer, {
         detectRetina: true
@@ -60,10 +63,9 @@ function setup() {
     
     // District Control Button
     districtcontrol = new L.control.layers();
-    var i;
-    for (i = 1; i < 24; i++) {
+    for (var i = 1; i < 24; i++) {
         districts[i]= new L.geoJSON(bezirksgrenzen, {filter: function(feature) {return feature.properties.BEZNR == i;}, style: {'color': "#707070"}});
-        districtcontrol.addOverlay(districts[i], i.toString());
+        districtcontrol.addOverlay(districts[i], '<span class="glyphicon glyphicon-ban-circle"></span> '+i+". Bez.");
         districts[i].onAdd = function (map) {
             this.eachLayer(map.addLayer, map);
             restricteddistricts.add(Number(districts.getKeyByValue(this)));
@@ -111,17 +113,26 @@ function setup() {
             click: function()
             {
                 guess = marker.getLatLng();
+                drawStreet(street);
+                error = 9999999;
+                drawnStreet.eachLayer(function (layer) {
+                    layer._latlngs.forEach(function (teil) {
+                        teil.forEach(function (ll) {
+                            var dist = ll.distanceTo(guess);
+                            if (dist < error) {
+                                error = dist;
+                                nearestpoint = ll;
+                                }
+                            // console.log(ll.distanceTo(guess))
+                        })
+                    })
+                });
                 guessmarker.setLatLng(guess).addTo(mymap);
-                guessmarker.bindPopup("Your Guess").openPopup();
+                guessmarker.bindPopup("Your Guess</br>off by: "+Math.round(error)+"m").openPopup();
                 console.log('ok clicked');
                 mymap.addLayer(labellayer);
-                drawStreet(street);
                 mymap.fitBounds(L.featureGroup([guessmarker, drawnStreet]).getBounds());
-                // mymap.fitBounds(drawnStreet.getBounds());
-                // var really = marker._latlng;
-                // errorline = L.polyline([guess, really]).addTo(mymap);
-                // var errordist = mymap.distance(guess, really);
-                // console.log(errordist);
+                errorline = L.polyline([guess, nearestpoint], {color: "red", opacity: 0.5}).addTo(mymap);
             },
         }});
         submitb.addTo(mymap);
@@ -151,7 +162,7 @@ function setup() {
                 mymap.removeLayer(labellayer);
                 drawnStreet.remove();
                 guessmarker.remove();
-                // errorline.remove();
+                errorline.remove();
             },
         }
         })
@@ -160,14 +171,14 @@ function setup() {
 }
 
 function drawStreet(name) {
-    drawnStreet = L.geoJSON(data, {filter: function(feature) {return feature.properties.FEATURENAME == name;}, 
+    drawnStreet = L.geoJSON(data, {filter: function(feature) {return feature.properties.FEATURENAME == name && !restricteddistricts.has(Number(feature.properties.BEZIRK.slice(3,5)));}, 
                                     style: {'color': "#0033FF"}}).addTo(mymap);
 }
 
 function activeDistricts () {
     var result = [];
     console.log(result);
-    for (i = 1; i < 24; i++) {
+    for (var i = 1; i < 24; i++) {
         if (!restricteddistricts.has(i)) {
             result.push(districts[i]);
         }
