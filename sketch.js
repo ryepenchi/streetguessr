@@ -33,7 +33,7 @@ function preload() {
     // data = loadJSON(url)
     // Data: Stadt Wien – data.wien.gv.at
     data = loadJSON("streets.json");
-    bezirksgrenzen = loadJSON("bezirke.json");
+    bezirksgrenzen = loadJSON("districts.json");
 }
 
 function setup() {
