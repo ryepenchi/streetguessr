@@ -3,26 +3,21 @@
  * (c) 2018 Benjamin Reimitz
  */
 
-var data;
-var tempdata;
-var bezirksgrenzen;
-var playarea;
-var mymap;
-var marker;
-var guess;
-var guessmarker = new L.marker();
-var street;
-var error;
-var nearestpoint;
-var errorline;
-var drawnStreet;
-var wien = new L.LatLng(48.2110, 16.3725);
-var defaultdistricts = new Set([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23]);
-var restricteddistricts = new Set();
-var unrestricteddistricts = new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]);
-var districtcontrol;
-var districts = {};
-var state = false;
+var data, tempdata,
+    bezirksgrenzen,
+    playarea,
+    mymap,
+    marker,
+    guess,
+    guessmarker = new L.marker(),
+    error,
+    drawnStreet,
+    wien = new L.LatLng(48.2110, 16.3725),
+    defaultdistricts = new Set(Array.from({length: 14}, (x,i) => i+10)),
+    restricteddistricts = new Set(),
+    unrestricteddistricts = new Set(Array.from({length: 23}, (x,i) => i+1)),
+    districtcontrol,
+    districts = {};
 
 districts.getKeyByValue = function( value ) {
     for( var prop in this ) {
@@ -68,7 +63,7 @@ function setup() {
     marker = new L.marker(wien).addTo(mymap);
     
     // District Control Button
-    districtcontrol = new L.control.layers();
+    districtcontrol = new L.control.layers(null, null);
     for (var i = 1; i < 24; i++) {
         districts[i]= new L.geoJSON(bezirksgrenzen, {filter: function(feature) {return feature.properties.BEZNR == i;}, style: {'color': "#707070"}});
         districtcontrol.addOverlay(districts[i], '<span class="glyphicon glyphicon-ban-circle"></span> '+i+". Bez.");
@@ -89,6 +84,7 @@ function setup() {
     districtcontrol.addTo(mymap);
 
     // Info
+    var street;
 	var info = L.control({position: "topleft"});
 	info.onAdd = function () {
         this._div = L.DomUtil.create('div', 'info');
@@ -102,25 +98,23 @@ function setup() {
     info.addTo(mymap);
 
     // Submit Button
+    var errorline;
     var submitb = L.control.custom({
         position: 'bottomright',
         content : '<button name="guess" type="button" class="btn btn-success btn-lg">'+
                 '<i class="glyphicon glyphicon-ok"></i>'+
                 '</button>',
-        classes : 'btn-group-horizontal btn-group-lg',
-        style   :
-        {
-            margin: '10px',
-            padding: '0px 0 0 0',
-            cursor: 'pointer'
-        },
         events:
         {
             click: function()
             {
+                submitb.remove();
+                resetb.addTo(mymap);
                 guess = marker.getLatLng();
+                marker.remove();
                 drawStreet(street);
                 error = 9999999;
+                var nearestpoint;
                 drawnStreet.eachLayer(function (layer) {
                     layer._latlngs.forEach(function (teil) {
                         teil.forEach(function (ll) {
@@ -129,7 +123,6 @@ function setup() {
                                 error = dist;
                                 nearestpoint = ll;
                                 }
-                            // console.log(ll.distanceTo(guess))
                         })
                     })
                 });
@@ -145,24 +138,19 @@ function setup() {
 
     // Reset Button
     var resetb = L.control.custom({
-        position: 'bottomleft',
-        content : '<button name="new" type="button" class="btn btn-warning btn-lg">'+
-                '<i class="glyphicon glyphicon-refresh"></i>'+
+        position: 'bottomright',
+        content : '<button name="reset" type="button" class="btn btn-primary btn-lg">'+
+                '<i class="glyphicon glyphicon-share-alt"></i>'+
                 '</button>',
-        classes : 'btn-group-horizontal btn-group-lg',
-        style   :
-        {
-            margin: '30px',
-            padding: '0px 0 0 0',
-            cursor: 'pointer'
-        },
         events:
         {
             click: function(data) {
+                resetb.remove();
+                submitb.addTo(mymap);
+                marker.addTo(mymap);
                 console.log('refresh clicked');
                 playarea = new L.featureGroup(activeDistricts());
                 mymap.fitBounds(playarea.getBounds());
-                // mymap.setView(wien, 13);
                 street = getRandomStreet();
                 info.update();
                 mymap.removeLayer(labellayer);
@@ -171,9 +159,7 @@ function setup() {
                 errorline.remove();
             },
         }
-        })
-        .addTo(mymap);
-
+    });
 }
 
 function drawStreet(name) {
