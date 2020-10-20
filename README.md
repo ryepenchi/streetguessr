@@ -1,6 +1,6 @@
-# StreetsOfVienna
+# Streetguessr
 
-Play: https://ahornsirup.github.io/StreetsOfVienna/
+Play: https://ryepenchi.github.io/streetguessr/
 
 # JS Libraries:
 - Leaflet https://leafletjs.com/
