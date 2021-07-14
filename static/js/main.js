@@ -38,9 +38,9 @@ function setup(bothdatas) {
 		zoomDelta: 0.5
 	}).setView(WIEN, 11);
 
-
-	var TILE_URL = "http://{s}.tile.stamen.com/toner-lines/{z}/{x}/{y}.png";
-	var stamen_toner_lines = new L.tileLayer(TILE_URL, {
+	// Basemap definitions
+	var STAMEN_TONER_URL = "https://{s}.tile.stamen.com/toner-lines/{z}/{x}/{y}.png";
+	var stamen_toner_lines = new L.tileLayer(STAMEN_TONER_URL, {
 		detectRetina: true,
 		attribution: [
 			'Map tiles by <a href="http://stamen.com/">Stamen Design</a>, ',
@@ -49,7 +49,22 @@ function setup(bothdatas) {
 			'under <a href="http://www.opendatacommons.org/licenses/odbl">ODbL</a>. ',
 			'Data: <a href="https://data.wien.gv.at">Stadt Wien</a>.'
 		].join("")
+	})
+	var MAPBOX_BASE_URL = "https://api.mapbox.com/styles/v1/ahornsirup/ckr32k5fngg6618o9nsacnb5y/tiles/{z}/{x}/{y}?access_token="
+	var MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoiYWhvcm5zaXJ1cCIsImEiOiJjazNqNTBxeHgwM2trM2RydnozbDdwMXMwIn0.0xe5TIh6XSo1pKrjsAUgEA"
+	var mapbox_base = L.tileLayer(MAPBOX_BASE_URL + MAPBOX_ACCESS_TOKEN, {
+		detectRetina: true,
+		tileSize: 512,
+		zoomOffset: -1,
+		attribution: '© <a href="https://apps.mapbox.com/feedback/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 	}).addTo(map);
+	var MAPBOX_LABELS_URL = "https://api.mapbox.com/styles/v1/ahornsirup/ckr32wouf1caf19rzqqsf2szu/tiles/{z}/{x}/{y}?access_token="
+	var mapbox_labels = L.tileLayer(MAPBOX_LABELS_URL + MAPBOX_ACCESS_TOKEN, {
+		detectRetina: true,
+		tileSize: 512,
+		zoomOffset: -1,
+		attribution: '© <a href="https://apps.mapbox.com/feedback/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+	})
 
 	// Leaflet Controls construction
 
@@ -203,6 +218,7 @@ function setup(bothdatas) {
 	
 	function nextRound() {
 		marker.setPopupContent("Your Guess");
+		mapbox_labels.remove();
 		continuectl.remove();
 		confirmctl.addTo(map);
 		singleL.remove();
@@ -214,6 +230,7 @@ function setup(bothdatas) {
 
 	var errorline, closestpoint;
 	function submitGuess() {
+		mapbox_labels.addTo(map);
 		singleL.addTo(map);
 		confirmctl.remove();
 		continuectl.addTo(map);
