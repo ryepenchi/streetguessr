@@ -33,7 +33,7 @@ function setup(bothdatas) {
 		// center: WIEN,
 		// zoom: 11,
 		minZoom: 11,
-		maxZoom: 16,
+		maxZoom: 17,
 		zoomControl: false,
 		zoomDelta: 0.5
 	}).setView(WIEN, 11);
@@ -92,7 +92,10 @@ function setup(bothdatas) {
 			filter: function (feature) {
 				return feature.properties.BEZNR == i;
 			},
-			style: { 'color': "#808080" },
+			style: {
+				'color': "#808080",
+				'fillOpacity': 0,
+		 },
 		});
 		let dnum = i
 		d.onAdd = function (map) {
@@ -178,7 +181,22 @@ function setup(bothdatas) {
 	}).addTo(map);
 
 	// Marker
-	var marker = L.marker(WIEN).addTo(map).bindPopup("Your Guess");
+	// custom Icon
+	var custom_icon = L.Icon.extend({
+		options: {
+			iconSize: [28, 40],
+			iconAnchor: [14.5, 40],
+			popupAnchor: [0, -41]
+		}
+	});
+	var q_icon = new custom_icon({
+		iconUrl: "static/img/questionmark_orange.svg",
+	});
+	var e_icon = new custom_icon({
+		iconUrl: "static/img/exclamationmark_blue.svg",
+	});
+
+	var marker = L.marker(WIEN, {icon: q_icon}).addTo(map).bindPopup("Your Guess");
 	map.on('click', function (e) {
 		marker.setLatLng(e.latlng)
 	});
@@ -239,7 +257,7 @@ function setup(bothdatas) {
 		var guess = Object.values(marker.getLatLng());
 		var snapped = closestLayerPoint(street, L.point(guess));
 		var dist = map.distance(guess, [snapped.x, snapped.y]);
-		closestpoint = L.marker([snapped.x, snapped.y]).addTo(map).bindPopup("Off by: "+Math.floor(dist)+"m").openPopup();
+		closestpoint = L.marker([snapped.x, snapped.y], {icon: e_icon}).addTo(map).bindPopup("Off by: "+Math.floor(dist)+"m").openPopup();
 		errorline = L.polyline([guess, [snapped.x, snapped.y]], {color: "red", opacity: 0.5, "dashArray":"4"}).addTo(map);
 		map.fitBounds(L.featureGroup([marker, singleL]).getBounds());
 	}
